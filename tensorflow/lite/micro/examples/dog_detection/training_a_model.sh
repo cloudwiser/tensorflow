@@ -78,6 +78,9 @@ python models/research/slim/download_and_convert_data.py \
 #   2. ...but you should have a useable model after a few hours to experiment with (see the TF Lite Micro tutorials)
 #   3. stderr is redirected to stdout to show tf.logging
 #   4. Don't forget to stop the instance once you have finished!!
+#   5. Don't burn loads of time here on training a new model....only to find that certain ops are not supported 
+#      in TFLite micro after quantization and attempting to run it on the microcontroller. 
+#      Run a short training cycle, continue as belpw and test...then retrain for the full number of steps/desired accuracy
 #
 python models/research/slim/train_image_classifier.py \
     --train_dir=vww_96_grayscale \
@@ -87,7 +90,6 @@ python models/research/slim/train_image_classifier.py \
     --model_name=mobilenet_v1_025 \
     --preprocessing_name=mobilenet_v1 \
     --train_image_size=96 \
-    --input_grayscale=True \
     --save_summaries_secs=300 \
     --learning_rate=0.045 \
     --label_smoothing=0.1 \
@@ -96,7 +98,9 @@ python models/research/slim/train_image_classifier.py \
     --moving_average_decay=0.9999 \
     --batch_size=96 \
     --max_number_of_steps=1000000 \
+    --use_grayscale=True \
     2>&1
+#  --input_grayscale=True \
 
 # Run the model evaluation
 #
@@ -105,15 +109,15 @@ python models/research/slim/train_image_classifier.py \
 #
 python models/research/slim/eval_image_classifier.py \
     --alsologtostderr \
-    --checkpoint_path=vww_96_grayscale/model.ckpt-131369 \
+    --checkpoint_path=vww_96_grayscale/model.ckpt-108899 \
     --dataset_dir=./visualwakewords/ \
     --dataset_name=visualwakewords \
     --dataset_split_name=val \
     --model_name=mobilenet_v1_025 \
     --preprocessing_name=mobilenet_v1 \
-    --use_grayscale=True \
-    --train_image_size=96
-#   --input_grayscale=True \
+    --train_image_size=96 \
+    --use_grayscale=True
+#   --input_grayscale=True
 
 # Export the model to a GraphDef file
 #
@@ -125,8 +129,9 @@ python models/research/slim/export_inference_graph.py \
     --dataset_name=visualwakewords \
     --model_name=mobilenet_v1_025 \
     --image_size=96 \
-    --input_grayscale=True \
-    --output_file=vww_96_grayscale_graph.pb
+    --output_file=vww_96_grayscale_graph.pb \
+    --use_grayscale=True
+#   --input_grayscale=True
 
 # Clone TF 1.15
 #
@@ -143,8 +148,9 @@ git clone -b r1.15 https://github.com/tensorflow/tensorflow.git
 #
 python tensorflow/tensorflow/python/tools/freeze_graph.py \
 --input_graph=vww_96_grayscale_graph.pb \
---input_checkpoint=vww_96_grayscale/model.ckpt-131369 \
---input_binary=true --output_graph=vww_96_grayscale_frozen.pb \
+--input_checkpoint=vww_96_grayscale/model.ckpt-108899 \
+--input_binary=true \
+--output_graph=vww_96_grayscale_frozen.pb \
 --output_node_names=MobilenetV1/Predictions/Reshape_1
 
 # Quantize the frozen model
@@ -162,8 +168,9 @@ sudo apt-get -qq install xxd imagemagick
 #
 xxd -i vww_96_grayscale_quantized.tflite > dog_detect_model_data.cc
 
-# Copy the C source file to your local host from the VM
+# Copy the tflite model & C source file to your local host from the VM
 #
+<local_host>$ gcloud compute scp $INSTANCE_NAME:vww_96_grayscale_quantized.tflite <local_path>
 <local_host>$ gcloud compute scp $INSTANCE_NAME:dog_detect_model_data.cc <local_path>
 
 # Now create dog and no_dog image arrays from sample png files (on your local host)
@@ -187,3 +194,7 @@ xxd -s 54 -i no_dog.bmp3 > no_dog_image_data.cc
 #
 <local_host>$ gcloud compute scp $INSTANCE_NAME:dog_image_data.cc <local_path>
 <local_host>$ gcloud compute scp $INSTANCE_NAME:no_dog_image_data.cc <local_path>
+
+
+# Reverse xxd to go from a .cc file with the C++ syntax stripped out, back to a tflite file for Netron or similar analysis
+xxd -r -p model.hex model.tflite
