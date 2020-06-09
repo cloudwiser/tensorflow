@@ -690,7 +690,7 @@ class TrainingTest(keras_parameterized.TestCase):
         metrics=['accuracy'],
         run_eagerly=testing_utils.should_run_eagerly())
 
-  @keras_parameterized.run_all_keras_modes(skip_keras_tensors=True)
+  @keras_parameterized.run_all_keras_modes
   def test_that_trainable_disables_updates(self):
     val_a = np.random.random((10, 4))
     val_out = np.random.random((10, 4))
@@ -701,13 +701,15 @@ class TrainingTest(keras_parameterized.TestCase):
     model = training_module.Model(a, b)
 
     model.trainable = False
-    assert not model.updates
+    if not ops.executing_eagerly_outside_functions():
+      self.assertEmpty(model.updates)
 
     model.compile(
         'sgd',
         'mse',
         run_eagerly=testing_utils.should_run_eagerly())
-    assert not model.updates
+    if not ops.executing_eagerly_outside_functions():
+      self.assertEmpty(model.updates)
 
     x1 = model.predict(val_a)
     model.train_on_batch(val_a, val_out)
@@ -719,7 +721,8 @@ class TrainingTest(keras_parameterized.TestCase):
         'sgd',
         'mse',
         run_eagerly=testing_utils.should_run_eagerly())
-    assert model.updates
+    if not ops.executing_eagerly_outside_functions():
+      self.assertAllGreater(len(model.updates), 0)
 
     model.train_on_batch(val_a, val_out)
     x2 = model.predict(val_a)
@@ -730,7 +733,8 @@ class TrainingTest(keras_parameterized.TestCase):
         'sgd',
         'mse',
         run_eagerly=testing_utils.should_run_eagerly())
-    assert not model.updates
+    if not ops.executing_eagerly_outside_functions():
+      self.assertEmpty(model.updates)
 
     x1 = model.predict(val_a)
     model.train_on_batch(val_a, val_out)
@@ -1557,6 +1561,43 @@ class TrainingTest(keras_parameterized.TestCase):
     model_without_updates.fit(x, y, batch_size=10)
     # assign_add not called.
     self.assertEqual(self.evaluate(layer.v), 1.)
+
+  @keras_parameterized.run_all_keras_modes(always_skip_v1=True)
+  @parameterized.named_parameters(('numpy', True), ('dataset', False))
+  def test_single_input_no_tuple_wrapping(self, use_numpy):
+    x = np.ones((10, 1))
+
+    if use_numpy:
+      batch_size = 3
+    else:
+      x = dataset_ops.Dataset.from_tensor_slices(x).batch(3)
+      batch_size = None
+
+    test_case = self
+
+    class MyModel(training_module.Model):
+
+      def train_step(self, data):
+        # No tuple wrapping for single x input and no targets.
+        test_case.assertIsInstance(data, ops.Tensor)
+        return super(MyModel, self).train_step(data)
+
+      def test_step(self, data):
+        test_case.assertIsInstance(data, ops.Tensor)
+        return super(MyModel, self).test_step(data)
+
+      def predict_step(self, data):
+        test_case.assertIsInstance(data, ops.Tensor)
+        return super(MyModel, self).predict_step(data)
+
+    inputs = layers_module.Input(1)
+    outputs = layers_module.Dense(1)(inputs)
+    model = MyModel(inputs, outputs)
+    model.add_loss(math_ops.reduce_sum(outputs))
+    model.compile('sgd', 'mse')
+    model.fit(x, batch_size=batch_size)
+    model.evaluate(x, batch_size=batch_size)
+    model.predict(x, batch_size=batch_size)
 
 
 class TestExceptionsAndWarnings(keras_parameterized.TestCase):

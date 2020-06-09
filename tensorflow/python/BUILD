@@ -3062,6 +3062,7 @@ tf_gen_op_wrapper_private_py(name = "rnn_ops_gen")
 
 tf_gen_op_wrapper_private_py(
     name = "sendrecv_ops_gen",
+    visibility = ["//tensorflow:internal"],
     deps = [
         "//tensorflow/core:sendrecv_ops_op_lib",
     ],
@@ -6632,6 +6633,7 @@ tf_py_test(
     deps = [
         ":client",
         ":client_testlib",
+        ":control_flow_v2_toggles",
         ":framework",
         ":framework_for_generated_wrappers",
         ":math_ops",
@@ -6649,9 +6651,11 @@ tf_py_test(
     python_version = "PY3",
     tags = ["no_rocm"],
     deps = [
-        "client_testlib",
-        "framework_test_lib",
+        ":client_testlib",
+        ":control_flow_v2_toggles",
         ":convert_to_constants",
+        ":framework_test_lib",
+        ":math_ops",
     ],
 )
 
