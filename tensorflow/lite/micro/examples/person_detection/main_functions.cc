@@ -34,7 +34,8 @@ tflite::MicroInterpreter* interpreter = nullptr;
 TfLiteTensor* input = nullptr;
 
 // An area of memory to use for input, output, and intermediate arrays.
-constexpr int kTensorArenaSize = 93 * 1024;
+// constexpr int kTensorArenaSize = 93 * 1024;
+constexpr int kTensorArenaSize = 170 * 1024;
 static uint8_t tensor_arena[kTensorArenaSize];
 }  // namespace
 
@@ -65,14 +66,39 @@ void setup() {
   //
   // tflite::AllOpsResolver resolver;
   // NOLINTNEXTLINE(runtime-global-variables)
+  /*
   static tflite::MicroMutableOpResolver<3> micro_op_resolver;
-  micro_op_resolver.AddBuiltin(
-      tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
-      tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
+                                tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D,
-                               tflite::ops::micro::Register_CONV_2D());
+                                tflite::ops::micro::Register_CONV_2D());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_AVERAGE_POOL_2D,
-                               tflite::ops::micro::Register_AVERAGE_POOL_2D());
+                                tflite::ops::micro::Register_AVERAGE_POOL_2D());
+  */
+
+  // Ops for the retrained MobileNet v1_025 grayscale (dog-detector) model
+  //
+  // Use Netron (https://github.com/lutzroeder/netron) or similar to determine 
+  // the full-set of ops required by the tflite model
+  // 
+  // As noted above, the easier approach is to just use the AllOpsResolver()
+  // but this isn't very tinyML-like :-)
+  //
+  static tflite::MicroMutableOpResolver<7> micro_op_resolver;
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
+                          tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D,
+                          tflite::ops::micro::Register_CONV_2D());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_AVERAGE_POOL_2D,
+                          tflite::ops::micro::Register_AVERAGE_POOL_2D());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
+                          tflite::ops::micro::Register_RESHAPE());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_QUANTIZE,
+                          tflite::ops::micro::Register_QUANTIZE());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_DEQUANTIZE,
+                          tflite::ops::micro::Register_DEQUANTIZE());
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
+                          tflite::ops::micro::Register_SOFTMAX());
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
