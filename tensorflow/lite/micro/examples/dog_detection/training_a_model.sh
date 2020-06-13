@@ -2,10 +2,10 @@
 # Training a model for TF Lite Micro using Visual Wakewords dataset on a GCP Deep Learning VM
 # -------------------------------------------------------------------------------------------
 #
-#   1. This uses TF 1.15 rather than 2.0 given slim is not ported nor has a compatability mode...
-#       ...try and run this on TF 2.0 and you will encounter exceptions all the way
+#   1. This uses TF 1.15 rather than 2.0 given slim is not ported nor has a compatability mode at the
+#       time of writing. Running this against TF 2.0 caused exceptions all the way!
 #   2. This is GPU-enabled...so don't leave it running and burn your free annual GCP GPU credit and/or hard cash!
-#   3. The model training script(s) assigns to /device:GPU0 and will fail if you attempt to run on a CPU-only instance
+#   3. The model training script(s) are hardcoded to /device:GPU0 so will fail if you attempt to run on a CPU-only instance
 #
 
 # Ensure you have the GCP CLI tools installed for your native OS and...
@@ -100,7 +100,7 @@ python models/research/slim/train_image_classifier.py \
     --max_number_of_steps=1000000 \
     --use_grayscale=True \
     2>&1
-#  --input_grayscale=True \
+#  as opposed to --input_grayscale=True \
 
 # Run the model evaluation
 #
@@ -117,7 +117,7 @@ python models/research/slim/eval_image_classifier.py \
     --preprocessing_name=mobilenet_v1 \
     --train_image_size=96 \
     --use_grayscale=True
-#   --input_grayscale=True
+#   as opposed to --input_grayscale=True
 
 # Export the model to a GraphDef file
 #
@@ -131,7 +131,7 @@ python models/research/slim/export_inference_graph.py \
     --image_size=96 \
     --output_file=vww_96_grayscale_graph.pb \
     --use_grayscale=True
-#   --input_grayscale=True
+#   as opposed to --input_grayscale=True
 
 # Clone TF 1.15
 #
