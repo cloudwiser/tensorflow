@@ -16,7 +16,6 @@ limitations under the License.
 #include "tensorflow/lite/micro/examples/dog_detection/model_settings.h"
 
 const char* kCategoryLabels[kCategoryCount] = {
-    "unused",
     "dog",
     "notdog",
 };

@@ -59,7 +59,8 @@ export BAUD_RATE=921600
 # Reflash the device...
 #
 # Press button 14 ----> press reset button -----> KEEP HOLDING button 14 down ------> and hit Enter on the below:
-python3 tensorflow/lite/micro/tools/make/downloads/AmbiqSuite-Rel2.2.0/tools/apollo3_scripts/uart_wired_update.py -b ${BAUD_RATE} ${DEVICENAME} -r 1 -f main_nonsecure_wire.bin -i 6
+python3 tensorflow/lite/micro/tools/make/downloads/AmbiqSuite-Rel2.2.0/tools/apollo3_scripts/uart_wired_update.py \
+-b ${BAUD_RATE} ${DEVICENAME} -r 1 -f main_nonsecure_wire.bin -i 6
 
 # Below is the type of expected response
 '

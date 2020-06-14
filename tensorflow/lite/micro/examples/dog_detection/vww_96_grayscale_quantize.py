@@ -32,13 +32,13 @@ converter = tf.lite.TFLiteConverter.from_frozen_graph('vww_96_grayscale_frozen.p
 # converter.inference_type = tf.lite.constants.UINT8
 # converter.representative_dataset = representative_dataset_gen
 
-# converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-# converter.inference_input_type = tf.uint8
-# converter.inference_output_type = tf.uint8
-# converter.representative_dataset = representative_dataset_gen
-
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+converter.inference_input_type = tf.uint8
+converter.inference_output_type = tf.uint8
 converter.representative_dataset = representative_dataset_gen
+
+# converter.optimizations = [tf.lite.Optimize.DEFAULT]
+# converter.representative_dataset = representative_dataset_gen
 
 tflite_quant_model = converter.convert()
 open("vww_96_grayscale_quantized.tflite", "wb").write(tflite_quant_model)

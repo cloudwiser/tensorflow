@@ -70,6 +70,17 @@ python models/research/slim/download_and_convert_data.py \
     --foreground_class_of_interest='dog' \
     2>&1
 
+'
+python models/research/slim/datasets/build_visualwakewords_data.py \
+    --logtostderr \
+    --train_image_dir=coco/raw-data/train2014 \
+    --val_image_dir=coco/raw-data/val2014 \
+    --train_annotations_file=coco/raw-data/annotations/instances_train2014.json \
+    --val_annotations_file=coco/raw-data/annotations/instances_val2014.json \
+    --output_dir=coco/processed_dogs \
+    --small_object_area_threshold=0.005 \
+    --foreground_class_of_interest='dog'
+'
 
 # Run the model training session
 #
@@ -184,17 +195,24 @@ convert -resize 96x96\! dog.png dog.bmp3
 convert -resize 96x96\! no_dog.png no_dog.bmp3
 
 # Convert RGB colorspace to grayscale
-# convert <img_in> -set colorspace Gray -separate -average <img_out>
+convert dog.bmp3 -grayscale average dog_gray.bmp3
+convert no_dog.bmp3 -grayscale average no_dog_gray.bmp3
 
-# Skip the 54 byte bmp3 header and add the rest of the bytes to a C array:
-xxd -s 54 -i dog.bmp3 > dog_image_data.cc
-xxd -s 54 -i no_dog.bmp3 > no_dog_image_data.cc
+# Python script to skip the bmp3 header and write a single channel prior to ASCII conversion by xxd
+python bmp3_to_hex.py dog_gray.bmp3 dog_gray.hex
+python bmp3_to_hex.py no_dog_gray.bmp3 no_dog_gray.hex
+xxd -i dog_gray.hex > dog_image_data.cc
+xxd -i no_dog_gray.hex > no_dog_image_data.cc
 
 # Copy the C source files to your local host from the VM
 #
 <local_host>$ gcloud compute scp $INSTANCE_NAME:dog_image_data.cc <local_path>
 <local_host>$ gcloud compute scp $INSTANCE_NAME:no_dog_image_data.cc <local_path>
 
-
 # Reverse xxd to go from a .cc file with the C++ syntax stripped out, back to a tflite file for Netron or similar analysis
 xxd -r -p model.hex model.tflite
+
+# Instantiate TensorBoard on gcp instance...
+tensorboard --logdir="./vww_96_grayscale/" --port 6006
+# .. and on your localhost, create the ssh tunnel to run in the background
+(local) gcloud beta compute ssh --zone \"$ZONE\" \"$INSTANCE_NAME\" -- -NfL 6006:localhost:6006
