@@ -63,22 +63,13 @@ git clone https://github.com/tensorflow/models.git
 #   4. stderr is redirected to stdout to show tf.logging
 #
 
-# Not convinced this works for non-person objects!!
-python models/research/slim/download_and_convert_data.py \
-    --logtostderr \
-    --dataset_name=visualwakewords \
-    --dataset_dir=./visualwakewords \
-    --small_object_area_threshold=0.005 \
-    --foreground_class_of_interest='dog' \
-    2>&1
-
 # Default : person as the foreground class
 python models/research/slim/download_and_convert_data.py \
     --logtostderr \
     --dataset_name=visualwakewords \
     --dataset_dir=./visualwakewords
 
-# Recreated training script referenced in TinyML book - absent from TF1.15 or TF2.x master though...
+# Recreated training script referenced in TinyML book - absent from TF1.15 or TF2.x master repo...
 python models/research/slim/datasets/build_visualwakewords_data.py \
     --logtostderr \
     --train_image_dir=coco/raw-data/train2014 \
@@ -101,6 +92,7 @@ python models/research/slim/datasets/build_visualwakewords_data.py \
 #      in TFLite micro after quantization and attempting to run it on the microcontroller. 
 #      Run a short training cycle, continue as belpw and test...then retrain for the full number of steps/desired accuracy
 #
+# For the VWW-based person training set
 python models/research/slim/train_image_classifier.py \
     --train_dir=vww_96_grayscale \
     --dataset_name=visualwakewords \
@@ -120,6 +112,26 @@ python models/research/slim/train_image_classifier.py \
     --use_grayscale=True \
     2>&1
 #  as opposed to --input_grayscale=True \
+
+# Or for the COCO-based dog training set...
+python models/research/slim/train_image_classifier.py \
+    --train_dir=vww_96_grayscale_dog \
+    --dataset_name=visualwakewords \
+    --dataset_split_name=train \
+    --dataset_dir=coco/processed_dogs \
+    --model_name=mobilenet_v1_025 \
+    --preprocessing_name=mobilenet_v1 \
+    --train_image_size=96 \
+    --save_summaries_secs=300 \
+    --learning_rate=0.045 \
+    --label_smoothing=0.1 \
+    --learning_rate_decay_factor=0.98 \
+    --num_epochs_per_decay=2.5 \
+    --moving_average_decay=0.9999 \
+    --batch_size=96 \
+    --max_number_of_steps=1000000 \
+    --use_grayscale=True \
+    2>&1
 
 # Run the model evaluation
 #
