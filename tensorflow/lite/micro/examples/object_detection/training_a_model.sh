@@ -128,7 +128,7 @@ python models/research/slim/train_image_classifier.py \
 #
 python models/research/slim/eval_image_classifier.py \
     --alsologtostderr \
-    --checkpoint_path=vww_96_grayscale/model.ckpt-108899 \
+    --checkpoint_path=vww_96_grayscale/model.ckpt-141432 \
     --dataset_dir=./visualwakewords/ \
     --dataset_name=visualwakewords \
     --dataset_split_name=val \
@@ -167,7 +167,7 @@ git clone -b r1.15 https://github.com/tensorflow/tensorflow.git
 #
 python tensorflow/tensorflow/python/tools/freeze_graph.py \
 --input_graph=vww_96_grayscale_graph.pb \
---input_checkpoint=vww_96_grayscale/model.ckpt-108899 \
+--input_checkpoint=vww_96_grayscale/model.ckpt-141432 \
 --input_binary=true \
 --output_graph=vww_96_grayscale_frozen.pb \
 --output_node_names=MobilenetV1/Predictions/Reshape_1
@@ -185,37 +185,39 @@ sudo apt-get -qq install xxd imagemagick
 
 # Save the file as a C source file
 #
-xxd -i vww_96_grayscale_quantized.tflite > dog_detect_model_data.cc
+xxd -i vww_96_grayscale_quantized.tflite > person_detect_model_data.cc
 
 # Copy the tflite model & C source file to your local host from the VM
 #
 <local_host>$ gcloud compute scp $INSTANCE_NAME:vww_96_grayscale_quantized.tflite <local_path>
-<local_host>$ gcloud compute scp $INSTANCE_NAME:dog_detect_model_data.cc <local_path>
+<local_host>$ gcloud compute scp $INSTANCE_NAME:person_detect_model_data.cc <local_path>
+
+
 
 # Now create dog and no_dog image arrays from sample png files (on your local host)
 #
 # Move the images onto the gcp instance (or run this process locally)
-<local_host>$ gcloud compute scp <local_path>/dog.png $INSTANCE_NAME:dog.png
-<local_host>$ gcloud compute scp <local_path>/no_dog.png $INSTANCE_NAME:no_dog.png
+<local_host>$ gcloud compute scp <local_path>/person.png $INSTANCE_NAME:person.png
+<local_host>$ gcloud compute scp <local_path>/no_person.png $INSTANCE_NAME:no_person.png
 
 # Convert original image to simpler format via ImageMagick:
-convert -resize 96x96\! dog.png dog.bmp3
-convert -resize 96x96\! no_dog.png no_dog.bmp3
+convert -resize 96x96\! person.png person.bmp3
+convert -resize 96x96\! no_person.png no_person.bmp3
 
 # Convert RGB colorspace to grayscale
-convert dog.bmp3 -grayscale average dog_gray.bmp3
-convert no_dog.bmp3 -grayscale average no_dog_gray.bmp3
+convert person.bmp3 -grayscale average person_gray.bmp3
+convert no_person.bmp3 -grayscale average no_person_gray.bmp3
 
 # Python script to skip the bmp3 header and write a single channel prior to ASCII conversion by xxd
-python bmp3_to_hex.py dog_gray.bmp3 dog_gray.hex
-python bmp3_to_hex.py no_dog_gray.bmp3 no_dog_gray.hex
-xxd -i dog_gray.hex > dog_image_data.cc
-xxd -i no_dog_gray.hex > no_dog_image_data.cc
+python bmp3_to_hex.py person_gray.bmp3 person_gray.hex
+python bmp3_to_hex.py no_person_gray.bmp3 no_person_gray.hex
+xxd -i person_gray.hex > person_image_data.cc
+xxd -i no_person_gray.hex > no_person_image_data.cc
 
 # Copy the C source files to your local host from the VM
 #
-<local_host>$ gcloud compute scp $INSTANCE_NAME:dog_image_data.cc <local_path>
-<local_host>$ gcloud compute scp $INSTANCE_NAME:no_dog_image_data.cc <local_path>
+<local_host>$ gcloud compute scp $INSTANCE_NAME:person_image_data.cc <local_path>
+<local_host>$ gcloud compute scp $INSTANCE_NAME:no_person_image_data.cc <local_path>
 
 # Reverse xxd to go from a .cc file with the C++ syntax stripped out, back to a tflite file for Netron or similar analysis
 xxd -r -p model.hex model.tflite

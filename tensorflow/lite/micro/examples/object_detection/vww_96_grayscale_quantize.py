@@ -25,20 +25,16 @@ def representative_dataset_gen():
             break
 
 converter = tf.lite.TFLiteConverter.from_frozen_graph('vww_96_grayscale_frozen.pb', ['input'], ['MobilenetV1/Predictions/Reshape_1'])
-# converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
 
-# converter.inference_input_type = tf.lite.constants.UINT8
-# converter.inference_output_type = tf.lite.constants.UINT8
-# converter.inference_type = tf.lite.constants.UINT8
-# converter.representative_dataset = representative_dataset_gen
+# converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+# converter.inference_input_type = tf.uint8
+# converter.inference_output_type = tf.uint8
 
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-converter.inference_input_type = tf.uint8
-converter.inference_output_type = tf.uint8
+# TinyML book...
+converter.inference_input_type = tf.lite.constants.INT8
+converter.inference_output_type = tf.lite.constants.INT8
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
 converter.representative_dataset = representative_dataset_gen
-
-# converter.optimizations = [tf.lite.Optimize.DEFAULT]
-# converter.representative_dataset = representative_dataset_gen
-
 tflite_quant_model = converter.convert()
 open("vww_96_grayscale_quantized.tflite", "wb").write(tflite_quant_model)
