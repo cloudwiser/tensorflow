@@ -84,7 +84,7 @@ void setup() {
   // As noted above, the easier approach is to just use the AllOpsResolver()
   // but this isn't very tinyML-like :-)
   //
-  static tflite::MicroMutableOpResolver<6> micro_op_resolver;
+  static tflite::MicroMutableOpResolver<5> micro_op_resolver;
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
                           tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D,
@@ -93,10 +93,10 @@ void setup() {
                           tflite::ops::micro::Register_AVERAGE_POOL_2D());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
                           tflite::ops::micro::Register_RESHAPE());
-  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_QUANTIZE,
-                          tflite::ops::micro::Register_QUANTIZE());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
                           tflite::ops::micro::Register_SOFTMAX());
+  // micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_QUANTIZE,
+  //                        tflite::ops::micro::Register_QUANTIZE());
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
