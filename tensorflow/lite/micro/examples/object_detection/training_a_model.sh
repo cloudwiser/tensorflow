@@ -116,7 +116,7 @@ python models/research/slim/train_image_classifier.py \
 # Or for the COCO-based dog training set...
 python models/research/slim/train_image_classifier.py \
     --train_dir=vww_96_grayscale_dog \
-    --dataset_name=visualwakewords \
+    --dataset_name=visualwakewords_dog \
     --dataset_split_name=train \
     --dataset_dir=coco/processed_dogs \
     --model_name=mobilenet_v1_025 \

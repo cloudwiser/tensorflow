@@ -95,8 +95,6 @@ void setup() {
                           tflite::ops::micro::Register_RESHAPE());
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
                           tflite::ops::micro::Register_SOFTMAX());
-  // micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_QUANTIZE,
-  //                        tflite::ops::micro::Register_QUANTIZE());
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
