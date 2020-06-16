@@ -116,7 +116,7 @@ python models/research/slim/train_image_classifier.py \
 # Or for the COCO-based dog training set...
 python models/research/slim/train_image_classifier.py \
     --train_dir=vww_96_grayscale_dog \
-    --dataset_name=visualwakewords_dog \
+    --dataset_name=visualwakewords \
     --dataset_split_name=train \
     --dataset_dir=coco/processed_dogs \
     --model_name=mobilenet_v1_025 \
@@ -150,10 +150,23 @@ python models/research/slim/eval_image_classifier.py \
     --use_grayscale=True
 #   as opposed to --input_grayscale=True
 
+python models/research/slim/eval_image_classifier.py \
+    --alsologtostderr \
+    --checkpoint_path=vww_96_grayscale_dog/model.ckpt-46265 \
+    --dataset_dir=./coco/processed_dogs \
+    --dataset_name=visualwakewords \
+    --dataset_split_name=val \
+    --model_name=mobilenet_v1_025 \
+    --preprocessing_name=mobilenet_v1 \
+    --train_image_size=96 \
+    --use_grayscale=True
+
+
 # Export the model to a GraphDef file
 #
 #   Notes:
 #     1. A few INFO & WARNING messages are shown under TF 1.13 but you should still have a .pb file generated
+#     2. This will be common regardless of the chosen foreground object as we are just exporting the graph
 #
 python models/research/slim/export_inference_graph.py \
     --alsologtostderr \
@@ -163,6 +176,7 @@ python models/research/slim/export_inference_graph.py \
     --output_file=vww_96_grayscale_graph.pb \
     --use_grayscale=True
 #   as opposed to --input_grayscale=True
+
 
 # Clone TF 1.15
 #
@@ -184,12 +198,22 @@ python tensorflow/tensorflow/python/tools/freeze_graph.py \
 --output_graph=vww_96_grayscale_frozen.pb \
 --output_node_names=MobilenetV1/Predictions/Reshape_1
 
+python tensorflow/tensorflow/python/tools/freeze_graph.py \
+--input_graph=vww_96_grayscale_graph.pb \
+--input_checkpoint=vww_96_grayscale_dog/model.ckpt-46265 \
+--input_binary=true \
+--output_graph=vww_96_grayscale_dog_frozen.pb \
+--output_node_names=MobilenetV1/Predictions/Reshape_1
+
 # Quantize the frozen model
 #
 #   Notes:
-#     1. Code is a mix of that in the O'Reilly TinyML book plus https://github.com/tensorflow/tensorflow/issues/34720#issuecomment-563367319
+#     1. Code is a mix of that in the O'Reilly TinyML book 
+#     2. TDOD : refactor to support args
 #
 python vww_96_grayscale_quantize.py
+
+python vww_96_grayscale_dog_quantize.py
 
 # Install xxd & ImageMagick
 #
@@ -199,12 +223,15 @@ sudo apt-get -qq install xxd imagemagick
 #
 xxd -i vww_96_grayscale_quantized.tflite > person_detect_model_data.cc
 
+xxd -i vww_96_grayscale_dog_quantized.tflite > dog_detect_model_data.cc
+
 # Copy the tflite model & C source file to your local host from the VM
 #
 <local_host>$ gcloud compute scp $INSTANCE_NAME:vww_96_grayscale_quantized.tflite <local_path>
 <local_host>$ gcloud compute scp $INSTANCE_NAME:person_detect_model_data.cc <local_path>
 
-
+<local_host>$ gcloud compute scp $INSTANCE_NAME:vww_96_grayscale_dog_quantized.tflite <local_path>
+<local_host>$ gcloud compute scp $INSTANCE_NAME:dog_detect_model_data.cc <local_path>
 
 # Now create dog and no_dog image arrays from sample png files (on your local host)
 #
@@ -231,7 +258,7 @@ xxd -i no_person_gray.hex > no_person_image_data.cc
 <local_host>$ gcloud compute scp $INSTANCE_NAME:person_image_data.cc <local_path>
 <local_host>$ gcloud compute scp $INSTANCE_NAME:no_person_image_data.cc <local_path>
 
-# Reverse xxd to go from a .cc file with the C++ syntax stripped out, back to a tflite file for Netron or similar analysis
+# Reverse xxd to go from a .cc file with the C/C++ syntax removed, back to a tflite file for Netron or similar analysis
 xxd -r -p model.hex model.tflite
 
 # Instantiate TensorBoard on gcp instance...
