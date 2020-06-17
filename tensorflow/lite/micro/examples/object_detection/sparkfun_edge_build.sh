@@ -51,7 +51,7 @@ ls /dev/cu*
 # ls /dev/tty*
 
 # Set USB device name - on MacOS, select the one with '/dev/cu.wch***[-]<number>'
-export DEVICENAME=/dev/cu.wchusbserial21
+export DEVICENAME=/dev/cu.wchusbserial1440
 
 # Set USB programmer serial baud rate
 export BAUD_RATE=921600
